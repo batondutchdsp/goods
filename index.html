@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#151515">
+<title>GOODS</title>
+<link rel="icon" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg: #f7f1e1;
+    --card: #ffffff;
+    --ink: #1b1b1b;
+    --sub: #6b6455;
+    --line: #e2d9c2;
+    --yellow: #ffd21f;
+    --yellow-soft: #fff4c2;
+    --black: #151515;
+    --red: #b9411c;
+    --green: #2f7a4a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+    font-feature-settings: "palt"; -webkit-user-select: none; user-select: none;
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; touch-action: manipulation; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ===== ヘッダー ===== */
+  header {
+    flex: none; background: var(--black); color: #fff;
+    display: flex; align-items: center; gap: 14px;
+    padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top));
+    min-height: 60px;
+  }
+  header img { width: 44px; height: 44px; flex: none; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .04em; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  header h1 b { color: var(--yellow); }
+  .spacer { flex: 1; }
+  .staff { display: flex; align-items: center; gap: 8px; flex: none; }
+  .staff label { font-size: 13px; color: #cfcfcf; }
+  .staff select {
+    background: var(--yellow); color: var(--black); font-weight: 700; font-size: 16px;
+    border: 0; border-radius: 10px; padding: 8px 34px 8px 12px; min-width: 150px; height: 42px;
+    appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--black) 50%), linear-gradient(135deg, var(--black) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 18px, calc(100% - 12px) 18px; background-size: 6px 6px; background-repeat: no-repeat;
+  }
+  .staff select.empty { background-color: #fff; outline: 3px solid var(--red); }
+  .today { text-align: right; line-height: 1.15; flex: none; }
+  .today small { display: block; font-size: 11px; color: #bdbdbd; }
+  .today strong { font-size: 18px; color: var(--yellow); }
+  .iconbtn { background: #2b2b2b; color: #fff; width: 42px; height: 42px; border-radius: 10px; font-size: 20px; flex: none; }
+  .pending { background: var(--red); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+  .pending[hidden] { display: none; }
+
+  /* ===== 本体 ===== */
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 330px; }
+  .goods {
+    min-height: 0; overflow-y: auto; padding: 14px;
+    display: grid; gap: 12px; align-content: stretch;
+  }
+  .item {
+    background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+    display: flex; flex-direction: column; padding: 12px; min-height: 128px; min-width: 0;
+    transition: background .12s, border-color .12s;
+  }
+  .item.on { background: var(--yellow-soft); border-color: var(--yellow); box-shadow: 0 0 0 2px var(--yellow) inset; }
+  .item .tap { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: left; background: none; padding: 0; min-height: 0; }
+  .item .name { font-size: clamp(16px, 1.8vw, 21px); font-weight: 800; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .item .price { margin-top: 4px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .item .price strong { font-size: clamp(18px, 2vw, 24px); }
+  .item .price s { color: var(--sub); font-size: 14px; }
+  .item .price .tag { background: var(--red); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px; align-self: center; }
+  .item .price.disc strong { color: var(--red); }
+  .ctrl { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 6px; margin-top: 8px; }
+  .ctrl button { height: 50px; border-radius: 12px; font-size: 28px; font-weight: 700; line-height: 1; }
+  .ctrl .minus { background: #ece5d2; color: var(--ink); }
+  .ctrl .minus:disabled { opacity: .35; }
+  .ctrl .plus { background: var(--black); color: var(--yellow); }
+  .ctrl .qty { text-align: center; font-size: 28px; font-weight: 800; }
+  .item:not(.on) .ctrl .qty { color: #b7ae97; }
+
+  /* ===== 会計パネル ===== */
+  .panel { background: #fff; border-left: 2px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .panel h2 { margin: 0; padding: 14px 16px 8px; font-size: 15px; color: var(--sub); letter-spacing: .08em; }
+  .lines { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px; }
+  .lines .empty { color: #a9a191; font-size: 14px; padding: 16px 0; text-align: center; }
+  .line { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 15px; }
+  .line .n { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .line .s { font-weight: 700; text-align: right; }
+  .line .d { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
+  .sum { padding: 12px 16px; border-top: 2px solid var(--line); }
+  .sum .row { display: flex; justify-content: space-between; align-items: baseline; }
+  .sum .cnt { color: var(--sub); font-size: 14px; }
+  .sum .total { font-size: 40px; font-weight: 900; letter-spacing: .01em; }
+  .sum .total small { font-size: 22px; margin-right: 2px; }
+  .actions { display: grid; grid-template-columns: 90px 1fr; gap: 8px; padding: 0 16px 12px; }
+  .clear { background: #ece5d2; border-radius: 14px; font-weight: 700; font-size: 15px; height: 64px; }
+  .confirm { background: var(--yellow); color: var(--black); border-radius: 14px; font-weight: 900; font-size: 24px; height: 64px; letter-spacing: .1em; box-shadow: 0 3px 0 #c9a200; }
+  .confirm:disabled, .clear:disabled { opacity: .4; box-shadow: none; }
+  .last { margin: 0 16px 14px; padding: 10px 12px; border-radius: 12px; background: #f4efe2; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .last[hidden] { display: none; }
+  .last span { flex: 1; min-width: 0; color: var(--sub); }
+  .last b { color: var(--ink); }
+  .last button { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 700; color: var(--red); flex: none; }
+
+  /* ===== 通知・ダイアログ ===== */
+  .toast {
+    position: fixed; left: 50%; top: 84px; transform: translateX(-50%) translateY(-20px);
+    background: var(--green); color: #fff; font-weight: 800; font-size: 20px;
+    padding: 14px 26px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 30; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { background: var(--red); }
+  .demo { flex: none; background: #fff4c2; color: #6b5300; text-align: center; font-size: 13px; padding: 5px 12px; }
+  .demo[hidden] { display: none; }
+  dialog { border: 0; border-radius: 16px; padding: 22px; width: min(420px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog h3 { margin: 0 0 8px; }
+  dialog p { margin: 0 0 14px; color: var(--sub); font-size: 14px; line-height: 1.6; }
+  dialog input { width: 100%; font-size: 18px; padding: 12px; border: 2px solid var(--line); border-radius: 10px; -webkit-user-select: text; user-select: text; }
+  dialog .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  dialog .btns button { padding: 12px 18px; border-radius: 10px; font-weight: 700; }
+  dialog .ok { background: var(--black); color: var(--yellow); }
+  dialog .cancel { background: #ece5d2; }
+
+  /* ===== スマホ ===== */
+  @media (max-width: 760px) {
+    header { flex-wrap: wrap; gap: 8px 10px; padding: 8px 12px; }
+    header img { width: 36px; height: 36px; }
+    header h1 { font-size: 17px; flex: 1 1 calc(100% - 110px); }
+    .spacer { display: none; }
+    #reload { order: 1; }
+    .pending { order: 3; }
+    .staff { order: 5; flex: 1; }
+    .staff label { display: none; }
+    .last { padding: 6px 10px; }
+    .staff select { flex: 1; min-width: 0; }
+    .today { order: 4; }
+    main { display: block; overflow-y: auto; }
+    .goods { overflow: visible; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; grid-template-rows: none !important; padding: 12px 12px 16px; gap: 10px; }
+    .item { min-height: 140px; padding: 10px; }
+    .ctrl { grid-template-columns: 44px 1fr 44px; }
+    .ctrl button { height: 46px; font-size: 24px; }
+    .ctrl .qty { font-size: 24px; }
+    .panel { position: sticky; bottom: 0; border-left: 0; border-top: 2px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,.08); padding-bottom: env(safe-area-inset-bottom); }
+    .panel h2, .lines { display: none; }
+    .sum { border-top: 0; padding: 8px 16px 6px; }
+    .sum .total { font-size: 30px; }
+    .actions { grid-template-columns: 80px 1fr; padding-bottom: 8px; }
+    .clear, .confirm { height: 54px; }
+    .last { margin-bottom: 8px; }
+  }
+  @media (min-width: 761px) and (max-width: 1000px) {
+    main { grid-template-columns: 1fr 280px; }
+    .sum .total { font-size: 34px; }
+  }
+  @media (max-height: 700px) and (min-width: 761px) {
+    .item { min-height: 112px; padding: 10px; }
+    .ctrl button { height: 44px; }
+    .actions .clear, .actions .confirm { height: 56px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="">
+  <h1 id="title">Baton Dutch <b>GOODS</b></h1>
+  <div class="spacer"></div>
+  <span class="pending" id="pending" hidden></span>
+  <div class="today"><small>本日の売上</small><strong class="num" id="today">¥0</strong></div>
+  <div class="staff">
+    <label for="staff">担当</label>
+    <select id="staff"></select>
+  </div>
+  <button class="iconbtn" id="reload" title="商品・担当者を読み込み直す" aria-label="読み込み直す">↻</button>
+</header>
+<div class="demo" id="demo" hidden>デモ表示中（スプレッドシート未接続・記録されません）</div>
+<main>
+  <section class="goods" id="goods"></section>
+  <aside class="panel">
+    <h2>お会計</h2>
+    <div class="lines" id="lines"></div>
+    <div class="sum">
+      <div class="row"><span class="cnt num" id="cnt">0点</span><span class="total num" id="total"><small>¥</small>0</span></div>
+    </div>
+    <div class="actions">
+      <button class="clear" id="clear">クリア</button>
+      <button class="confirm" id="confirm">確定</button>
+    </div>
+    <div class="last" id="last" hidden><span id="lastText"></span><button id="undo">取り消す</button></div>
+  </aside>
+</main>
+<div class="toast" id="toast"></div>
+
+<dialog id="keyDialog">
+  <h3>合言葉を入力</h3>
+  <p>スプレッドシートの Apps Script で作った合言葉を入れてください。この端末に保存されます。</p>
+  <input id="keyInput" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div class="btns"><button class="cancel" id="keyCancel">あとで</button><button class="ok" id="keyOk">保存</button></div>
+</dialog>
+
+<script>
+(() => {
+  // ▼ Apps Script をデプロイしたときの「ウェブアプリのURL」を入れる（空ならデモ表示）
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxT3Y95jgxUNQoExEYxG68XDOJzW-ceiL4n2m-d4XWBato67kpeRCtV4hiQmRUbuFPeMw/exec';
+
+  const LS = { key: 'bdg-key', staff: 'bdg-staff', config: 'bdg-config', queue: 'bdg-queue', last: 'bdg-last', cart: 'bdg-cart' };
+  const DEMO = {
+    title: 'Baton Dutch 2026 GOODS',
+    goods: [
+      { name: 'Tシャツ', list: 3500, price: 3500 },
+      { name: 'タオル', list: 2000, price: 1500 },
+      { name: 'ステッカー', list: 500, price: 500 },
+      { name: 'キーホルダー', list: 800, price: 800 },
+      { name: 'コインケース', list: 1500, price: 1200 },
+      { name: 'パンフレット', list: 1000, price: 1000 },
+    ],
+    staff: ['担当者A', '担当者B', '担当者C'],
+    today: { total: 0, count: 0, items: 0 },
+  };
+
+  const store = {
+    get(k, def) { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const $ = (id) => document.getElementById(id);
+  const yen = (n) => '¥' + Math.round(n).toLocaleString('ja-JP');
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // URL に ?key=合言葉 が付いていたら保存して URL から消す（スタッフへの共有用）
+  const params = new URLSearchParams(location.search);
+  if (params.get('key')) {
+    store.set(LS.key, params.get('key'));
+    params.delete('key');
+    history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : ''));
+  }
+
+  const demo = !API_URL;
+  let config = demo ? DEMO : store.get(LS.config, { title: '', goods: [], staff: [], today: { total: 0, count: 0, items: 0 } });
+  let cart = store.get(LS.cart, {});      // { 商品名: 個数 }
+  let queue = store.get(LS.queue, []);    // 未送信の会計・取り消し
+  let last = store.get(LS.last, null);    // 直前の会計
+  let flushing = false;
+
+  // ===== 表示 =====
+  function renderHeader() {
+    const t = config.title || 'Baton Dutch GOODS';
+    $('title').innerHTML = esc(t).replace(/GOODS/i, '<b>$&</b>');
+    document.title = t;
+    $('demo').hidden = !demo;
+
+    const sel = $('staff');
+    const saved = store.get(LS.staff, '');
+    const list = config.staff.slice();
+    if (saved && !list.includes(saved)) list.push(saved);
+    sel.innerHTML = '<option value="">担当者を選択</option>' + list.map((s) => `<option${s === saved ? ' selected' : ''}>${esc(s)}</option>`).join('');
+    sel.classList.toggle('empty', !sel.value);
+    renderToday();
+  }
+
+  function renderToday() {
+    const pend = queue.filter((q) => q.type === 'sale').reduce((a, q) => a + q.sale.items.reduce((b, it) => b + it.price * it.qty, 0), 0);
+    $('today').textContent = yen((config.today ? config.today.total : 0) + pend);
+    const n = queue.length;
+    $('pending').hidden = n === 0;
+    $('pending').textContent = '未送信 ' + n + '件';
+  }
+
+  function layoutGrid() {
+    const n = Math.max(config.goods.length, 1);
+    const cols = n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 4 : 5;
+    const rows = Math.ceil(n / cols);
+    const g = $('goods');
+    g.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+    g.style.gridTemplateRows = `repeat(${rows}, minmax(112px, 1fr))`;
+  }
+
+  function renderGoods() {
+    const names = config.goods.map((g) => g.name);
+    Object.keys(cart).forEach((k) => { if (!names.includes(k)) delete cart[k]; });
+    $('goods').innerHTML = config.goods.map((g, i) => {
+      const disc = g.price < g.list;
+      return `<div class="item" data-i="${i}">
+        <button class="tap" data-act="plus" aria-label="${esc(g.name)}を1つ追加">
+          <span class="name">${esc(g.name)}</span>
+          <span class="price${disc ? ' disc' : ''}"><strong class="num">${yen(g.price)}</strong>${disc ? `<s class="num">${yen(g.list)}</s><span class="tag">値引</span>` : ''}</span>
+        </button>
+        <div class="ctrl">
+          <button class="minus" data-act="minus" aria-label="減らす">−</button>
+          <span class="qty num">0</span>
+          <button class="plus" data-act="plus" aria-label="増やす">＋</button>
+        </div>
+      </div>`;
+    }).join('') || '<p style="color:var(--sub)">商品がありません。スプレッドシートの「商品」タブに入力して ↻ を押してください。</p>';
+    layoutGrid();
+    renderCart();
+  }
+
+  function cartItems() {
+    return config.goods.filter((g) => cart[g.name] > 0).map((g) => ({ name: g.name, price: g.price, list: g.list, qty: cart[g.name] }));
+  }
+
+  function renderCart() {
+    document.querySelectorAll('.item').forEach((el) => {
+      const g = config.goods[el.dataset.i];
+      const q = cart[g.name] || 0;
+      el.classList.toggle('on', q > 0);
+      el.querySelector('.qty').textContent = q;
+      el.querySelector('.minus').disabled = q === 0;
+    });
+    const items = cartItems();
+    const total = items.reduce((a, it) => a + it.price * it.qty, 0);
+    const count = items.reduce((a, it) => a + it.qty, 0);
+    $('lines').innerHTML = items.length
+      ? items.map((it) => `<div class="line"><span class="n">${esc(it.name)}</span><span class="s num">${yen(it.price * it.qty)}</span><span class="d num">${yen(it.price)} × ${it.qty}${it.price < it.list ? '（値引）' : ''}</span></div>`).join('')
+      : '<div class="empty">商品をタップしてください</div>';
+    $('cnt').textContent = count + '点';
+    $('total').innerHTML = '<small>¥</small>' + total.toLocaleString('ja-JP');
+    $('confirm').disabled = count === 0;
+    $('clear').disabled = count === 0;
+    store.set(LS.cart, cart);
+  }
+
+  function renderLast() {
+    $('last').hidden = !last;
+    if (last) {
+      const t = new Date(last.time);
+      $('lastText').innerHTML = `直前の会計 <b class="num">${yen(last.total)}</b>（${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}）`;
+    }
+  }
+
+  let toastTimer;
+  function toast(msg, err) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.toggle('err', !!err);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), err ? 3500 : 1600);
+  }
+
+  // ===== 通信 =====
+  async function api(body) {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ token: store.get(LS.key, '') }, body)) });
+    const json = await res.json();
+    if (!json.ok) { const e = new Error(json.error); e.server = true; throw e; }
+    return json.data;
+  }
+
+  function askKey() {
+    const d = $('keyDialog');
+    if (d.open) return;
+    $('keyInput').value = store.get(LS.key, '');
+    d.showModal();
+  }
+
+  async function loadConfig(manual) {
+    if (demo) { if (manual) toast('デモ表示です'); return; }
+    if (!store.get(LS.key, '')) { askKey(); return; }
+    try {
+      const data = await api({ action: 'config' });
+      config = data;
+      store.set(LS.config, config);
+      renderHeader();
+      renderGoods();
+      if (manual) toast('読み込みました');
+      flush();
+    } catch (e) {
+      handleError(e, manual);
+    }
+  }
+
+  function handleError(e, loud) {
+    if (e.server && /合言葉/.test(e.message)) { toast('合言葉が違います', true); askKey(); return; }
+    if (e.server) { toast(e.message, true); return; }
+    if (loud) toast('通信できませんでした。電波を確認してください', true);
+  }
+
+  async function flush() {
+    if (demo || flushing || !queue.length || !store.get(LS.key, '')) return;
+    flushing = true;
+    try {
+      while (queue.length) {
+        const q = queue[0];
+        try {
+          const data = q.type === 'sale' ? await api({ action: 'sale', sale: q.sale }) : await api({ action: 'cancel', id: q.id });
+          config.today = data.today;
+          store.set(LS.config, config);
+        } catch (e) {
+          if (!e.server || /合言葉/.test(e.message)) { handleError(e, false); break; }
+          toast('記録できませんでした：' + e.message, true); // データの問題は再送しても直らないので外す
+        }
+        queue.shift();
+        store.set(LS.queue, queue);
+        renderToday();
+      }
+    } finally {
+      flushing = false;
+      renderToday();
+    }
+  }
+
+  // ===== 操作 =====
+  $('goods').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-act]');
+    if (!btn) return;
+    const g = config.goods[btn.closest('.item').dataset.i];
+    const q = cart[g.name] || 0;
+    if (btn.dataset.act === 'plus') cart[g.name] = Math.min(q + 1, 99);
+    else cart[g.name] = Math.max(q - 1, 0);
+    if (!cart[g.name]) delete cart[g.name];
+    renderCart();
+  });
+
+  $('clear').addEventListener('click', () => { cart = {}; renderCart(); });
+
+  $('staff').addEventListener('change', (ev) => {
+    store.set(LS.staff, ev.target.value);
+    ev.target.classList.toggle('empty', !ev.target.value);
+  });
+
+  $('confirm').addEventListener('click', () => {
+    const items = cartItems();
+    if (!items.length) return;
+    const staff = $('staff').value;
+    if (!staff) { toast('担当者を選んでください', true); $('staff').focus(); return; }
+    const total = items.reduce((a, it) => a + it.price * it.qty, 0);
+    const sale = { id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8), time: new Date().toISOString(), staff, items };
+    if (demo) {
+      config.today.total += total;
+    } else {
+      queue.push({ type: 'sale', sale });
+      store.set(LS.queue, queue);
+    }
+    last = { id: sale.id, total, time: sale.time };
+    store.set(LS.last, last);
+    cart = {};
+    renderCart();
+    renderLast();
+    renderToday();
+    toast(yen(total) + ' 確定しました');
+    $('confirm').disabled = true;
+    flush();
+  });
+
+  $('undo').addEventListener('click', () => {
+    if (!last) return;
+    if (!confirm(`直前の会計（${yen(last.total)}）を取り消しますか？`)) return;
+    const i = queue.findIndex((q) => q.type === 'sale' && q.sale.id === last.id);
+    if (demo) config.today.total -= last.total;
+    else if (i >= 0 && !(i === 0 && flushing)) queue.splice(i, 1);
+    else queue.push({ type: 'cancel', id: last.id });
+    store.set(LS.queue, queue);
+    last = null;
+    store.set(LS.last, null);
+    renderLast();
+    renderToday();
+    toast('取り消しました');
+    flush();
+  });
+
+  $('reload').addEventListener('click', () => loadConfig(true));
+  $('keyOk').addEventListener('click', () => {
+    const v = $('keyInput').value.trim();
+    if (!v) return;
+    store.set(LS.key, v);
+    $('keyDialog').close();
+    loadConfig(true);
+  });
+  $('keyCancel').addEventListener('click', () => $('keyDialog').close());
+  // ロゴを長押しで合言葉を入れ直せる
+  let pressTimer;
+  document.querySelector('header img').addEventListener('pointerdown', () => { pressTimer = setTimeout(askKey, 800); });
+  ['pointerup', 'pointerleave'].forEach((t) => document.querySelector('header img').addEventListener(t, () => clearTimeout(pressTimer)));
+
+  window.addEventListener('online', flush);
+  setInterval(flush, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) flush(); });
+
+  renderHeader();
+  renderGoods();
+  renderLast();
+  loadConfig(false);
+})();
+</script>
+</body>
+</html>
